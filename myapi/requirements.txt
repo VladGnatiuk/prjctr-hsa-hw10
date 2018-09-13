@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+motor
+elasticsearch[async]
+pydantic

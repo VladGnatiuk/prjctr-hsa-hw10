@@ -1,0 +1,96 @@
+version: '3.6'
+name: prctr-hsa-hw02
+services:
+  telegraf:
+    image: telegraf:1.29-alpine
+    user: "telegraf:root"
+    group_add:
+      - "1001"
+    volumes:
+      - ./telegraf/etc/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+    ports:
+    - '127.0.0.1:8125:8125/udp'
+
+  influxdb:
+    image: influxdb:1.8-alpine
+    env_file: configuration.env
+    ports:
+      - '127.0.0.1:8086:8086'
+    volumes:
+      - ./:/imports
+      - influxdb_data:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    depends_on:
+      - influxdb
+    env_file: configuration.env
+    links:
+      - influxdb
+    ports:
+      - '127.0.0.1:3000:3000'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/
+
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - '127.0.0.1:27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    command: ["mongod", "--setParameter", "diagnosticDataCollectionEnabled=true"]
+
+  elasticsearch:
+    image: elasticsearch:8.11.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.monitoring.templates.enabled=true
+    ports:
+      - '127.0.0.1:9200:9200'
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - '127.0.0.1:80:80'
+      - '127.0.0.1:8443:443'
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/www:/usr/share/nginx/html:ro
+    depends_on:
+      - grafana
+      - elasticsearch
+      - fastapi
+
+  fastapi:
+    build: 
+      context: ./myapi
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      - mongodb
+      - elasticsearch
+    environment:
+      - MONGODB_URL=mongodb://root:example@mongodb:27017/
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+
+volumes:
+  grafana_data: {}
+  influxdb_data: {}
+  mongodb_data: {}
+  elasticsearch_data: {}
