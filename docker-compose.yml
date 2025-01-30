@@ -1,6 +1,6 @@
 name: prctr-hsa-hw10
 services:
-  elasticsearch:
+  es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
     container_name: es01
     environment:
@@ -8,6 +8,8 @@ services:
       - cluster.name=es-docker-cluster
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.monitoring.templates.enabled=true
     ports:
@@ -15,7 +17,7 @@ services:
     volumes:
       - es01_data:/usr/share/elasticsearch/data
 
-  kibana:
+  kib01:
     image: docker.elastic.co/kibana/kibana:8.17.1
     container_name: kib01
     ports:
@@ -23,6 +25,14 @@ services:
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    depends_on: ["es01"]
+
+  jumpbox:
+    build: 
+      context: ./jumpbox
+    volumes:
+      - ./jumpbox:/app
+    depends_on: ["kib01", "es01"]
 
 volumes:
   es01_data: {}
