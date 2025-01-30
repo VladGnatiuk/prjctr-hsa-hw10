@@ -3,31 +3,10 @@ docker-compose up -d
 
 docker-compose up --build
 
-import dashboard
-    https://grafana.com/grafana/dashboards/61-telegraf-metrics/
 
-docker compose restart telegraf
-
-
-docker-compose up -d --build fastapi
-
----
-New-Item -ItemType Directory -Path "nginx\conf.d", "nginx\ssl", "nginx\www" -Force
-
----
-WSL
-    sudo apt-get update
-    sudo apt-get install apache2-utils
-
-Windows
-    choco install apache-httpd
-
-Docker
-    docker run httpd ab -V
-
-ab -V
-
-chmod +x load_test.sh
-
-docker build -t load-test load-test/
-docker run -v ${PWD}/load-test/results:/results load-test
+Elastic
+    http://localhost:9200
+Kibana
+    http://localhost:5601
+Jupyter
+    http://localhost:8888
