@@ -28,10 +28,12 @@ services:
     depends_on: ["es01"]
 
   jumpbox:
-    build: 
-      context: ./jumpbox
+    build: ./jumpbox
+    ports:
+      - "8888:8888"
     volumes:
       - ./jumpbox:/app
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root
     depends_on: ["kib01", "es01"]
 
 volumes:
